@@ -6,6 +6,7 @@ import { createStore } from 'redux';
 import todoApp from './reducers';
 import App from './components/App';
 import { loadState, saveState } from './localstorage'
+import { throttle } from 'lodash'
 
 // define the persistedState as what is loaded from local storage
 const persistedState = loadState()
@@ -17,12 +18,11 @@ const store = createStore(
 
 // store.subscribe() will be called every time the state changes.
 // essentially it adds a listener to state changes.
-store.subscribe(() => {
-  console.log('statechange', persistedState);
+store.subscribe(throttle(() => {
   saveState({
     todos: store.getState().todos
   });
-})
+}, 1000))
 
 render(
   <Provider store={store}>
