@@ -234,3 +234,69 @@ store.subscribe(throttle(() => {
   // 1000 refers to miliseconds so the saveState function run a maximum of once per second.
 }, 1000))
 ```
+
+# Refactoring the Entry point
+To refactor the Entry point for the store we are going to move the logic for configuring the store into a new component `configureStore.js`
+
+```js
+// configureStore.js
+
+import todoApp from './reducers';
+import { loadState, saveState } from './localstorage'
+import { throttle } from 'lodash'
+
+const configureStore = () => {
+    // define the persistedState as what is loaded from local storage
+    const persistedState = loadState()
+
+    const store = createStore(
+        todoApp,
+        persistedState
+    );
+
+    // store.subscribe() will be called every time the state changes.
+    // essentially it adds a listener to state changes.
+    store.subscribe(throttle(() => {
+        saveState({
+            todos: store.getState().todos
+        });
+    }, 1000))
+
+    return store
+}
+
+export default configureStore;
+```
+
+using this configureStore component we can import the store functionality into the application entry point index.js, without specifying the Reducer, or the Subscribers. This keeps the entry point clean and isolates the functionality of configureStore.
+
+```js
+// index.js
+// the Root component will be created in the second step
+import Root from './components/Root'
+import configureStore from './configureStore'
+
+const store = configureStore()
+
+render(
+  // simplified component for App and Providers
+  <Root store={store}/>,
+  document.getElementById('root')
+);
+```
+We are also going to create a Root component which will simplify/export the App component and Providers
+```js
+// components/Root.js
+import React from 'react';
+import Provider from 'react-redux'
+import App from './App'
+
+// {store} acts as ES6 syntax to utilize props.store as store, so that the provider can be passed the store prop coming from index.js
+const Root = ({ store }) => {
+    <Provider store={store}>
+        <App />
+    </Provider>
+}
+
+export default Root
+```
