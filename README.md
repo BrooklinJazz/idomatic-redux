@@ -218,3 +218,18 @@ export const addTodo = (text) => {
   };
 };
 ```
+
+The current app now works, however it could be made more performant since it currently calls the expansive JSON.serialize() methode every time the state changes. To solve this we're going to use the Lodash library's throttle utility.
+
+```
+npm install --save lodash
+```
+now configure the store.subscribe method to use the throttle function. To do this, you can wrap the throttle function around the arrow function inside of store.subscribe()
+```js
+store.subscribe(throttle(() => {
+  saveState({
+    todos: store.getState().todos
+  });
+  // 1000 refers to miliseconds so the saveState function run a maximum of once per second.
+}, 1000))
+```
