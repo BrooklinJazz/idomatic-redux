@@ -197,7 +197,7 @@ store.subscribe(() => {
 
 this will allow the todos to be saved without the UI state for visibilityFilter to be persisted.
 
-Currenty there is a bug in the code where if you add a todo, then refresh the local constant the defines the id of an added todo resets back to 0. this causes a same key error. To fix this we're going to use node-uuid
+Currenty there is a bug in the code where if you add a todo then refresh, the local constant nextTodoId that defines the id of an added todo resets back to 0. this causes a same key error. so new todos won't display until nextTodoId is greater than the number of todos persisted. To fix this we're going to use node-uuid
 ```
 npm install --save node-uuid
 ```
