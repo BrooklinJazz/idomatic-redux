@@ -302,6 +302,8 @@ export default Root
 ```
 
 # Add React-Router to the project
+The tutorial I'm following is outdated and uses browserHistory from the 'browserHistory' from react-router. This is no longer available so instead I'm choosing to create a separate history.js file and importing createBrowserHistory from the 'history' package.
+
 to add React-Router to the project first run:
 ```
 npm install --save react-router history
@@ -334,3 +336,52 @@ const Root = ({ store }) => (
 
 export default Root
 ```
+
+# Navigating with React Router 
+The tutorial says to define a (:filter) choice in the Route for App, however this seems to consistently Break the app so I am going forward without it
+```js
+// Root.js
+// don't do this:
+<Route path='/(:filter)' component={App} />
+// keep it as:
+<Route path='/' component={App} />
+```
+
+change footer filter props to more generic naming scheme
+```js
+// footer.js
+<FilterLink filter="all">
+...
+<FilterLink filter="active">
+...
+<FilterLink filter="completed">
+```
+
+remove previous FilterLink configuration to replace it with one that uses the router. 
+
+The tutorial I'm following is broken here because it uses the Link import from react router. Instead I'm going to install the react-router-dom package and import NavLink from there.
+npm install react-router-dom
+
+```js
+// FilterLink.js
+import React from 'react';
+import { NavLink } from 'react-router-dom'
+
+const FilterLink = ({ filter, children }) => (
+  <NavLink 
+  to={filter === 'all' ? '' : filter}
+  activeStyle={{
+    textDecoration: 'none',
+    color: 'black',
+  }}
+  >
+  {children}
+  </NavLink>
+)
+
+export default FilterLink
+```
+After doing all of the above you can do some
+cleanup of unnecessary code: 
+- Remove setVisibilityFilter action creator
+- delete Link.js component
