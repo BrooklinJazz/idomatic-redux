@@ -201,3 +201,20 @@ Currenty there is a bug in the code where if you add a todo then refresh, the lo
 ```
 npm install --save node-uuid
 ```
+
+We're going to use node-uuid to replace the nextTodoId constant in actions/index.js. 
+
+The v4 function in the node-uuid package generates a random and unique string so that each todo has a unique id. the commented lines are what we had there before.
+```js
+// actions/index.js
+// let nextTodoId = 0;
+import { v4 } from 'node-uuid'
+export const addTodo = (text) => {
+  return {
+    type: 'ADD_TODO',
+    id: v4(),
+    // id: (nextTodoId++).toString(),
+    text,
+  };
+};
+```
