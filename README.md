@@ -137,3 +137,67 @@ const store = createStore(
     visibilityFilter: 'SHOW_ALL',
 }
 ```
+
+# Persisting State to Local Storage
+
+create a new file localstorage.js. In this file you are going to create the function which loads the persisted state, as well as the function to save the persisted state
+
+```js
+// define the function which loads the state
+export const loadState = () => {
+    try {
+        const serializedState = localStorage.getItem('state');
+        // if there is no state key allow the reducers to define initial state
+        if (serializedState === null) {
+            return undefined
+        }
+        // Otherwise, turn serializedState into the initial state object
+        return JSON.parse(serializedState)
+    } catch (err) {
+        return undefined
+    }
+}
+
+// define the function which saves the state
+export const saveState = (state) => {
+    try {
+        const serializedState = JSON.stringify(state)
+        localStorage.setItem('state', serializedState)
+    } catch (err) {
+        // ignore write errors
+    }
+}
+```
+
+Now you are going to need to configure index.js to persist state using these two functions. You can redefine persisted State as the value that is loaded from local storage `loadState()` and add a listener using the `store.subscribe()` function to save the state in local storage every time a state change occurs
+
+```js
+// redefine the persistedState as what is loaded from local storage
+const persistedState = loadState()
+
+// store.subscribe() will be called every time the state changes.
+// essentially it adds a listener to state changes.
+store.subscribe(() => {
+  console.log('statechange', persistedState);
+  saveState(store.getState());
+})
+```
+
+Determine the paramaters of what states should persist. For this example, we do not want the UI state to persist, only the data. So rather than save the whole state, you can define which keys to persist.
+
+```js
+store.subscribe(() => {
+  console.log('statechange', persistedState);
+  saveState({
+    // store.getState() returns the state object so you can use dot notation to access the values on the todos key.
+    todos: store.getState().todos
+  });
+})
+```
+
+this will allow the todos to be saved without the UI state for visibilityFilter to be persisted.
+
+Currenty there is a bug in the code where if you add a todo, then refresh the local constant the defines the id of an added todo resets back to 0. this causes a same key error. To fix this we're going to use node-uuid
+```
+npm install --save node-uuid
+```
