@@ -8,7 +8,7 @@ import { Router, Route } from 'react-router'
 const Root = ({ store }) => (
     <Provider store={store}>
         <Router history={createBrowserHistory} >
-            <Route path='/' component={App} />
+            <Route path='/:filter?' component={App} />
         </Router>
     </Provider>
 )
