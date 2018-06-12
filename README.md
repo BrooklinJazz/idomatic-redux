@@ -184,7 +184,7 @@ store.subscribe(() => {
 })
 ```
 
-Determine the paramaters of what states should persist. For this example, we do not want the UI state to persist, only the data. So rather than save the whole state, you can define which keys to persist.
+Determine the paramaters of what states should persist. For this example, you do not want the UI state to persist, only the data. So rather than save the whole state, you can define which keys to persist.
 
 ```js
 store.subscribe(() => {
@@ -198,14 +198,14 @@ store.subscribe(() => {
 
 this will allow the todos to be saved without the UI state for visibilityFilter to be persisted.
 
-Currenty there is a bug in the code where if you add a todo then refresh, the local constant nextTodoId that defines the id of an added todo resets back to 0. this causes a same key error. so new todos won't display until nextTodoId is greater than the number of todos persisted. To fix this we're going to use node-uuid
+Currenty there is a bug in the code where if you add a todo then refresh, the local constant nextTodoId that defines the id of an added todo resets back to 0. this causes a same key error. so new todos won't display until nextTodoId is greater than the number of todos persisted. To fix this you're going to use node-uuid
 ```
 npm install --save node-uuid
 ```
 
-We're going to use node-uuid to replace the nextTodoId constant in actions/index.js. 
+you're going to use node-uuid to replace the nextTodoId constant in actions/index.js. 
 
-The v4 function in the node-uuid package generates a random and unique string so that each todo has a unique id. the commented lines are what we had there before.
+The v4 function in the node-uuid package generates a random and unique string so that each todo has a unique id. the commented lines are what you had there before.
 ```js
 // actions/index.js
 // let nextTodoId = 0;
@@ -220,7 +220,7 @@ export const addTodo = (text) => {
 };
 ```
 
-The current app now works, however it could be made more performant since it currently calls the expansive JSON.serialize() methode every time the state changes. To solve this we're going to use the Lodash library's throttle utility.
+The current app now works, however it could be made more performant since it currently calls the expansive JSON.serialize() methode every time the state changes. To solve this you're going to use the Lodash library's throttle utility.
 
 ```
 npm install --save lodash
@@ -236,11 +236,11 @@ store.subscribe(throttle(() => {
 ```
 
 # Refactoring the Entry point
-To refactor the Entry point for the store we are going to move the logic for configuring the store into a new component `configureStore.js`
+To refactor the Entry point for the store you are going to move the logic for configuring the store into a new component `configureStore.js`
 
 ```js
 // configureStore.js
-
+import { createStore } from 'redux';
 import todoApp from './reducers';
 import { loadState, saveState } from './localstorage'
 import { throttle } from 'lodash'
@@ -268,7 +268,7 @@ const configureStore = () => {
 export default configureStore;
 ```
 
-using this configureStore component we can import the store functionality into the application entry point index.js, without specifying the Reducer, or the Subscribers. This keeps the entry point clean and isolates the functionality of configureStore.
+using this configureStore component you can import the store functionality into the application entry point index.js, without specifying the Reducer, or the Subscribers. This keeps the entry point clean and isolates the functionality of configureStore.
 
 ```js
 // index.js
@@ -284,19 +284,53 @@ render(
   document.getElementById('root')
 );
 ```
-We are also going to create a Root component which will simplify/export the App component and Providers
+you are also going to create a Root component which will simplify/export the App component and Providers
 ```js
 // components/Root.js
-import React from 'react';
+import React. { PropTypes } from 'react';
 import Provider from 'react-redux'
 import App from './App'
 
 // {store} acts as ES6 syntax to utilize props.store as store, so that the provider can be passed the store prop coming from index.js
-const Root = ({ store }) => {
+const Root = ({ store }) => (
     <Provider store={store}>
         <App />
     </Provider>
-}
+)
+
+export default Root
+```
+
+# Add React-Router to the project
+to add React-Router to the project first run:
+```
+npm install --save react-router history
+```
+
+React Router requires the history proptype, so first you have to configure a history.js file that is going to be used to create the browser history. This history keeps track of which pages the user visits, as well as gives you the ability to redirect the user if you need to.
+
+```js
+// history.js
+import { createBrowserHistory } from 'history'
+
+export default createBrowserHistory();
+```
+
+Now in order to configure routing into the project, you will have to go to your Root.js file, and the imports for Routing, and add the Router and Route.
+
+```js
+import createBrowserHistory from '../history'
+import { Router, Route } from 'react-router'
+
+// {store} acts as ES6 syntax to utilize props.store as store.
+  // Router must be provided the history prop or you will see an error.
+const Root = ({ store }) => (
+    <Provider store={store}>
+        <Router history={createBrowserHistory} >
+            <Route path='/' component={App} />
+        </Router>
+    </Provider>
+)
 
 export default Root
 ```
