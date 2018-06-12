@@ -140,7 +140,7 @@ const store = createStore(
 
 # Persisting State to Local Storage
 
-create a new file localstorage.js. In this file you are going to create the function which loads the persisted state, as well as the function to save the persisted state
+create a new file localstorage.js. In this file you are going to create the function which loads the persisted state, as well as the function to save the persisted state.
 
 ```js
 // define the function which loads the state
@@ -165,6 +165,7 @@ export const saveState = (state) => {
         localStorage.setItem('state', serializedState)
     } catch (err) {
         // ignore write errors
+        // ignoring these errors, but having a function to catch them prevents the app from crashing
     }
 }
 ```
