@@ -338,13 +338,13 @@ export default Root
 ```
 
 # Navigating with React Router 
-The tutorial says to define a (:filter) choice in the Route for App, however this seems to consistently Break the app so I am going forward without it
+The tutorial says to define a (:filter) parameter in the Route for App, however this seems to consistently Break the app so I am going forward using a different parameter syntax
 ```js
 // Root.js
 // don't do this:
 <Route path='/(:filter)' component={App} />
-// keep it as:
-<Route path='/' component={App} />
+// instead do this:
+<Route path='/:filter?' component={App} />
 ```
 
 change footer filter props to more generic naming scheme
@@ -368,20 +368,69 @@ import React from 'react';
 import { NavLink } from 'react-router-dom'
 
 const FilterLink = ({ filter, children }) => (
-  <NavLink 
-  to={filter === 'all' ? '' : filter}
-  activeStyle={{
-    textDecoration: 'none',
-    color: 'black',
-  }}
+  <NavLink
+  // the tutorial does not use the exact to
+  // if you do not add exact then the activeStyle will not work.
+    exact to={filter === 'all' ? '' : '/' + filter}
+    activeStyle={{
+      textDecoration: 'none',
+      color: 'black',
+    }}
   >
-  {children}
+    {children}
   </NavLink>
 )
 
 export default FilterLink
 ```
 After doing all of the above you can do some
-cleanup of unnecessary code: 
+cleanup of unnecessary code:
 - Remove setVisibilityFilter action creator
 - delete Link.js component
+
+# Filtering Redux state with React Router Params
+
+configure VisibleTodoList
+```js
+const getVisibleTodos = (todos, filter) => {
+  switch (filter) {
+    case 'all': // renamed
+      return todos;
+    case 'completed': // renamed
+      return todos.filter(t => t.completed);
+    case 'active': // renamed
+      return todos.filter(t => !t.completed);
+    default:
+      throw new Error(`Unknown filter: ${filter}.`);
+  }
+};
+
+const mapStateToProps = (state, ownProps /*added ownProps*/) => {
+  return {
+    todos: getVisibleTodos(state.todos, ownProps.filter), // get filter from ownProps, not state.
+  };
+};
+```
+
+Now configure VisibleTodoList in App.js to use the match.params prop to set the filter. The match.params gives you access to the parameters in the url.
+
+```js
+const App = ({ match /*add the match value*/ }) => (
+...
+<VisibleTodoList
+    // it will use the filter param
+    filter={ match.params.filter || 'all'}
+     />
+     ...
+```
+
+set the devServer.js to serve the content on any url. This fixes the error when refreshing the page on a url with parameters
+
+```js
+// devServer.js
+app.get('/*' /*add the `*` meaning all routes*/, (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+```
+
+delete VisibilityFilter.js and it's import/use in index.js
