@@ -434,3 +434,44 @@ app.get('/*' /*add the `*` meaning all routes*/, (req, res) => {
 ```
 
 delete VisibilityFilter.js and it's import/use in index.js
+
+# Using withRouter() to Inject the Params into Connected Components
+Remove the filter prop from VisibleTodoList in App.js as you are going to use withRouter to inject params instead.
+```js
+const App = (/*{match} remove this*/) => (
+    <VisibleTodoList
+    // filter={ match.params.filter || 'all'} Remove This
+     />
+```
+import withRouter into VisibleTodoList.js
+```js
+// VisibleTodoList.js
+import { withRouter } from 'react-router'
+```
+
+wrap the VisibleTodoList connect result with withRouter so that the component gets the router related prosp such as params as a prop.
+
+```js
+// VisibleTodoList.js
+const VisibleTodoList = withRouter(connect(
+  mapStateToProps,
+  mapDispatchToProps
+)(TodoList));
+```
+
+now you're going to configure the mapStateToProps function so that it uses it's ownProps to access the filter value. Again, the tutorial pulls directly from params, however the newer react-router uses match.params so if you're following over the tutorial be careful of this difference.
+
+```js
+// VisibleTodoList.js
+const mapStateToProps = (state, ownProps) => {
+  return {
+    todos: getVisibleTodos(state.todos, ownProps.match.params.filter || 'all'),
+  };
+};
+// optionally you can refactor this to
+const mapStateToProps = (state, {match}) => {
+  return {
+    todos: getVisibleTodos(state.todos, match.params.filter || 'all'),
+  };
+};
+```
