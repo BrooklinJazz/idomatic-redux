@@ -506,3 +506,53 @@ export const toggleTodo = (id) => {
   };
 };
 ```
+
+# Colocating Selectors with Reducers
+Currently, the mapStateToProps function in VisibleTodoList uses the getVisibleTodos function to create the TodoList.
+
+The getVisibleTodos function or any function starting with get is often refered to as a selector.
+
+because the getVisibleTodos function is closely linked to the structure of todos, if you ever make changes to the todos reducer you would have to remember to change the getVisibleTodos function too. Because of this it is very useful to move Selector functions into the Reducer.
+
+to do this, you will start by moving the getVisibilityFilter function to the todo reducer and exporting it as a named function
+```js
+// move from VisibleTodoList.js to reducer/todos.js
+// remember to add the export
+// rename `todos` into state 
+export const getVisibleTodos = (state, filter) => {
+  switch (filter) {
+    case 'all':
+      return state; // renamed state into todos
+    case 'completed':
+      return state.filter(t => t.completed); // renamed state into todos
+    case 'active':
+      return state.filter(t => !t.completed); // renamed state into todos
+    default:
+      throw new Error(`Unknown filter: ${filter}.`);
+  }
+};
+```
+after making the getVisibleTodos function a named export in the todo reducer, import all named exports in the todo reducer into the main reducer. make sure to import them as an alias * as fromTodos so that there are no name conflicts.
+
+Once you have an import from the todo reducer, you are going to create another named function with the same name getVisibleTodos. This allows the state of the combined reducer to be used in the getVisibleTodos function.
+
+```js
+// reducer/index.js
+import todos, * as fromTodos from './todos';
+
+export const getVisibleTodos = (state, filter) =>
+  fromTodos.getVisibleTodos(state.todos, filter)
+
+```
+Now that you have encapsolated the structure of the state independently from the VisibleTodoList component, you can pass the whole state, rather than state.todos into the getVisibleTodos function.
+
+```js
+import { getVisibleTodos } from '../reducers'
+
+const mapStateToProps = (state, {match}) => {
+  return {
+    // where as before you passed state.todos, you can now keep the component independed from the knowledge of the state structure for more maintainable code.
+    todos: getVisibleTodos(state, match.params.filter || 'all'),
+  };
+};
+```
