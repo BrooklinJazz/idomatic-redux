@@ -512,7 +512,7 @@ Currently, the mapStateToProps function in VisibleTodoList uses the getVisibleTo
 
 The getVisibleTodos function or any function starting with get is often refered to as a selector.
 
-because the getVisibleTodos function is closely linked to the structure of todos, if you ever make changes to the todos reducer you would have to remember to change the getVisibleTodos function too. Because of this it is very useful to move Selector functions into the Reducer.
+because the getVisibleTodos function is closely linked to the structure of todos, if you ever make changes to the todos reducer you would have to remember to change the getVisibleTodos function too. Because of this it is very useful to move Selector functions into the appropriate Reducer.
 
 to do this, you will start by moving the getVisibilityFilter function to the todo reducer and exporting it as a named function
 ```js
@@ -554,5 +554,118 @@ const mapStateToProps = (state, {match}) => {
     // where as before you passed state.todos, you can now keep the component independed from the knowledge of the state structure for more maintainable code.
     todos: getVisibleTodos(state, match.params.filter || 'all'),
   };
+};
+```
+
+# Normalizing the State Shape
+
+We currently represent the todos in the state tree as an array of todo objects, however in a real app you will probably have more than a single array, and then todos with the same IDs in different arrays might get out of sync. This is why you should treat your state like a database.
+
+This is why you should keep your state as an object, indexed by the ids of the todos.
+
+Since your todos reducer is starting to get larger, you can create a separate todo reducer and cut/paste the todo code into it. make sure to import this into the todos reducer once you're done
+```js
+//todo.js
+const todo = (state, action) => {
+    switch (action.type) {
+        case 'ADD_TODO':
+            return {
+                id: action.id,
+                text: action.text,
+                completed: false,
+            };
+        case 'TOGGLE_TODO':
+            if (state.id !== action.id) {
+                return state;
+            }
+            return {
+                ...state,
+                completed: !state.completed,
+            };
+        default:
+            return state;
+    }
+};
+
+export default todo;
+```
+
+```js
+// todos.js
+import todo from './todo';
+```
+
+you are going to restructure the todos reducer to a byId reducer and allIds reducer. Where the todos reducer previously added a new item at the end or mapped over every item, these two reducers are going to change the value in the lookup table
+
+Both ADD_TODO and TOGGLE_TODO are going to use the same logic. They should both return a new lookup table where the value unto the ID in the action is going to be the result of calling the reducer on the previous value under this id and the action. This is still reducer composition, but with an object instead of an array.
+
+```js
+const byId = (state = {}, action) => {
+  switch (action.type) {
+    case 'ADD_TODO':
+    case 'TOGGLE_TODO':
+      return {
+        ...state,
+        // the byId reducer reads the id of the todo to update 
+        // from the action, and it calls the todo reducer with 
+        // the previous state of this ID and the action.
+        [action.id]: todo(state[action.id], action),
+      };
+    default:
+      return state;
+  }
+};
+```
+
+For the code above, ADD_TODO action, the corresponding todo will not exist in the lookup table yet, so we're calling the todo reducer with `undefined` as the first argument.
+
+The todo reducer would then return a new todo object so this object will get assigned under the [action.id] key inside the next version of the lookup table.
+
+We keep the todos themselves in the byId map now, so to make it easier to work with the lookup table, we are going to now add a allIds reducer which will handle keeping track of the new ids, rather than the todos themselves.
+
+for allIds, every time a todo is added, it returns a new action.id onto it's state array. In this example you now have two reducers being called on the same action type ADD_TODO. This is perfectly fine, and very common in Redux applications.
+```js
+// manages just the array of ids of the todos
+const allIds = (state = [], action) => {
+  switch (action.type) {
+    case 'ADD_TODO':
+      return [...state, action.id]
+    default:
+      return state
+  }
+}
+```
+
+Now you can combine these two reducers into a single todos reducer. This should already work properly with your current root reducer
+
+```js
+const todos = combineReducers({
+  byId,
+  allIds,
+});
+
+export default todos;
+```
+
+Lastly you need a way to get all of the todos to be used in the getVisibleFilter function. to do this, we are going to define a function getAllTodos that does not need an export because it will only be used locally. this function maps over allIds for todos, then returns the todo for each id
+
+you can then use this function to create an allTodos constant by passing the state of getVisibleTodos (which is being passed from the main reducer as state.todos) into the getAllTodos function.
+
+```js
+const getAllTodos = (state) =>
+  state.allIds.map(id => state.byId[id]);
+
+export const getVisibleTodos = (state, filter) => {
+  const allTodos = getAllTodos(state);
+  switch (filter) {
+    case 'all':
+      return allTodos;
+    case 'completed':
+      return allTodos.filter(t => t.completed);
+    case 'active':
+      return allTodos.filter(t => !t.completed);
+    default:
+      throw new Error(`Unknown filter: ${filter}.`);
+  }
 };
 ```
