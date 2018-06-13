@@ -475,3 +475,34 @@ const mapStateToProps = (state, {match}) => {
   };
 };
 ```
+
+# Using mapDispatchToProps Shorthand Notation
+
+When the arguments for the callback prop, match the arguments to the action creator exactly there is a shorter way to mapDispatchToProps
+
+instead of creating the mapDispatchToProps function, you can create a special object in the connect function that 
+
+```js
+// const mapDispatchToProps = (dispatch) => {
+//   return {
+//     onTodoClick: (id) => {
+//       dispatch(toggleTodo(id));
+//     },
+//   };
+// };
+
+const VisibleTodoList = withRouter(connect(
+  mapStateToProps,
+  // this object replaces the mapDispatchToProps function.
+  { onTodoClick: toggleTodo}
+)(TodoList));
+
+// you can only do this if the action creator matches the exact name of the function in dispatch:
+// actions/index.js
+export const toggleTodo = (id) => {
+  return {
+    type: 'TOGGLE_TODO',
+    id,
+  };
+};
+```
